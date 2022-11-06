@@ -30,6 +30,9 @@ const start = () => {
 		server.listen(process.env.PORT, () =>
 			console.log(`[server] listening on port ${process.env.PORT}`)
 		);
+		queue.add('test', { sarwar: '123' }).then((job) => {
+			console.log(r.progress);
+		});
 	} catch (error) {
 		console.log(error.message);
 	}
