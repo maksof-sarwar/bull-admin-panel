@@ -1,55 +1,37 @@
-const express = require('express');
-const http = require('http');
-const BullAdminPanel = require('bull-admin-panel');
-const Bull = require('bull')
-
-// const server = http.createServer(app);
-const { createBullBoard } = require('bull-board');
-const { BullAdapter } = require('bull-board/bullAdapter');
-const apiMontior = new Bull('Api Monitor', {
-  redis: {
-    host: 'localhost',
-    port: 6379,
-  },
-});
-
-const { router } = createBullBoard([new BullAdapter(apiMontior)])
+import dotenv from 'dotenv';
+dotenv.config();
+import express from 'express';
+import http from 'http';
 const app = express();
-app.use('/admin', router);
-// app.use('/admin', new BullAdminPanel({
-//   basePath: '/admin',
-//   verifyClient: (info, callback) => {
-//     // Do authorization for WebSocket.
-//     // https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketserveroptions-callback
-//     callback(true);
-//   },
-//   queues: [apiMontior],
-//   server: server
-// }));
-app.use((req, res, next) => {
-  const data = {
-    query: req.query,
-    body: req.body,
-    params : req.params
-  }
-  req.data = data;
-  apiMontior.add(data)
-  next()
-})
-apiMontior.process(test)
-
-function test(data) {
-  console.log(data)
-}
-app.get('/send', (req, res) => {
-  test(req.data)
-  res.status(200).send({ success : true, message : 'OK', data : req.data})
-})
-
-
-
-// Launch server
-app.listen(8000, () => {
-  // const {address, port} = app.;
-  console.log(`Server listening at http://:${8000}`);
+const server = http.createServer(app);
+import { Queue, Worker } from 'bullmq';
+import BullAdminPanel from 'bull-admin-panel';
+import IORedis from 'ioredis';
+const redis = new IORedis(process.env.REDIS_URL, {
+	reconnectOnError: true,
+	retryStrategy: 3,
 });
+redis.on('connect', () => console.log(`Redis connected.`));
+const queue = new Queue('events', { connection: redis });
+
+app.use(
+	'/bull',
+	new BullAdminPanel({
+		basePath: '/bull',
+		verifyClient: (info, callback) => {
+			callback(true);
+		},
+		queues: [queue],
+		server,
+	})
+);
+const start = () => {
+	try {
+		server.listen(process.env.PORT, () =>
+			console.log(`[server] listening on port ${process.env.PORT}`)
+		);
+	} catch (error) {
+		console.log(error.message);
+	}
+};
+start();
