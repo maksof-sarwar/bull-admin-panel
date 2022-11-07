@@ -1,10 +1,6 @@
 import dotenv from 'dotenv/config';
 import express from 'express';
-import setupAdmin, {
-	createQueue,
-	firstQueue,
-	setupProcessor,
-} from './lib/bull-admin-panel';
+import setupAdmin, { firstQueue } from './lib/bull-admin-panel';
 const app = express();
 app.use('/add/:name', async (req, res) => {
 	try {
@@ -13,7 +9,7 @@ app.use('/add/:name', async (req, res) => {
 		if (opts.delay) {
 			opts.delay = +opts.delay * 1000;
 		}
-		firstQueue.add(name, { title: req.query.title }, opts);
+		firstQueue.add(name, { title: req.query.title }, { ...opts });
 		res.status(200).send(`Queue added successfully.`);
 	} catch (err) {
 		res.status(500).send({ statusCode: 500, message: err.message });

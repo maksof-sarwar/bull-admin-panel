@@ -16,6 +16,7 @@ export async function setupProcessor(queueName, callback = null) {
 	new Worker(
 		queueName,
 		async (job) => {
+			console.log(job.data);
 			if (callback) {
 				callback(job);
 				return;
